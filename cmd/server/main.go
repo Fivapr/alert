@@ -50,13 +50,7 @@ func updateMetric(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		value, ok := storage.gauge[metricName]
-		if ok {
-			value = append(value, metricValue)
-		} else {
-			storage.gauge[metricName] = make([]float64, 1)
-			storage.gauge[metricName] = append(value, metricValue)
-		}
+		storage.gauge[metricName] = append(storage.gauge[metricName], metricValue)
 	}
 
 	if metricType == "counter" {
