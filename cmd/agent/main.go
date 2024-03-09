@@ -1,3 +1,144 @@
 package main
 
-func main() {}
+import (
+	"fmt"
+	"math/rand"
+	"net/http"
+	"reflect"
+	"runtime"
+	"strconv"
+	"time"
+)
+
+var snapshot MemStatsSnapshot
+var pollCount int
+var randomValue int
+
+type MemStatsSnapshot struct {
+	Alloc         uint64  `json:"Alloc"`
+	BuckHashSys   uint64  `json:"BuckHashSys"`
+	Frees         uint64  `json:"Frees"`
+	GCCPUFraction float64 `json:"GCCPUFraction"`
+	GCSys         uint64  `json:"GCSys"`
+	HeapAlloc     uint64  `json:"HeapAlloc"`
+	HeapIdle      uint64  `json:"HeapIdle"`
+	HeapInuse     uint64  `json:"HeapInuse"`
+	HeapObjects   uint64  `json:"HeapObjects"`
+	HeapReleased  uint64  `json:"HeapReleased"`
+	HeapSys       uint64  `json:"HeapSys"`
+	LastGC        uint64  `json:"LastGC"`
+	Lookups       uint64  `json:"Lookups"`
+	MCacheInuse   uint64  `json:"MCacheInuse"`
+	MCacheSys     uint64  `json:"MCacheSys"`
+	MSpanInuse    uint64  `json:"MSpanInuse"`
+	MSpanSys      uint64  `json:"MSpanSys"`
+	Mallocs       uint64  `json:"Mallocs"`
+	NextGC        uint64  `json:"NextGC"`
+	NumForcedGC   uint32  `json:"NumForcedGC"`
+	NumGC         uint32  `json:"NumGC"`
+	OtherSys      uint64  `json:"OtherSys"`
+	PauseTotalNs  uint64  `json:"PauseTotalNs"`
+	StackInuse    uint64  `json:"StackInuse"`
+	StackSys      uint64  `json:"StackSys"`
+	Sys           uint64  `json:"Sys"`
+	TotalAlloc    uint64  `json:"TotalAlloc"`
+}
+
+func createMemStatsSnapshot(m runtime.MemStats) MemStatsSnapshot {
+	snapshot := MemStatsSnapshot{
+		Alloc:         m.Alloc,
+		BuckHashSys:   m.BuckHashSys,
+		Frees:         m.Frees,
+		GCCPUFraction: m.GCCPUFraction,
+		GCSys:         m.GCSys,
+		HeapAlloc:     m.HeapAlloc,
+		HeapIdle:      m.HeapIdle,
+		HeapInuse:     m.HeapInuse,
+		HeapObjects:   m.HeapObjects,
+		HeapReleased:  m.HeapReleased,
+		HeapSys:       m.HeapSys,
+		LastGC:        m.LastGC,
+		Lookups:       m.Lookups,
+		MCacheInuse:   m.MCacheInuse,
+		MSpanInuse:    m.MSpanInuse,
+		MSpanSys:      m.MSpanSys,
+		Mallocs:       m.Mallocs,
+		NextGC:        m.NextGC,
+		NumForcedGC:   m.NumForcedGC,
+		NumGC:         m.NumGC,
+		OtherSys:      m.OtherSys,
+		PauseTotalNs:  m.PauseTotalNs,
+		StackInuse:    m.StackInuse,
+		StackSys:      m.StackSys,
+		Sys:           m.Sys,
+		TotalAlloc:    m.TotalAlloc,
+	}
+
+	return snapshot
+}
+
+func sendMetric(metricType string, metricName string, metricValue string) {
+	url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%s", metricType, metricName, metricValue)
+
+	response, err := http.Post(url, "text/plain", nil)
+	if err != nil {
+		fmt.Printf("Error sending request to %s: %v\n", url, err)
+		return
+	}
+
+	err = response.Body.Close()
+	if err != nil {
+		fmt.Printf("Error closing body: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Successfully sent metric %s to server\n", metricName)
+}
+
+func sendMetrics() {
+	v := reflect.ValueOf(snapshot)
+	typeOfSnapshot := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		metricName := typeOfSnapshot.Field(i).Name
+		metricValue := fmt.Sprintf("%v", v.Field(i).Interface())
+		metricType := "gauge" // Assuming all metrics are gauges
+
+		sendMetric(metricType, metricName, metricValue)
+	}
+
+	sendMetric("gauge", "RandomValue", strconv.Itoa(randomValue))
+	sendMetric("counter", "PollCount", strconv.Itoa(pollCount))
+}
+
+func updateMemStatsPeriodically() {
+	pollInterval := 2
+	pollTicker := time.NewTicker(time.Duration(pollInterval) * time.Second)
+
+	go func() {
+		for range pollTicker.C {
+			var m runtime.MemStats
+			runtime.ReadMemStats(&m)
+			snapshot = createMemStatsSnapshot(m)
+			randomValue = rand.Intn(1000)
+			pollCount++
+		}
+	}()
+}
+
+func sendMetricsPeriodically() {
+	reportInterval := 10
+	reportTicker := time.NewTicker(time.Duration(reportInterval) * time.Second)
+
+	go func() {
+		for range reportTicker.C {
+			sendMetrics()
+		}
+	}()
+}
+
+func main() {
+	updateMemStatsPeriodically()
+	sendMetricsPeriodically()
+	select {}
+}
