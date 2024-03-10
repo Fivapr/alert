@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
@@ -80,7 +81,7 @@ func createMemStatsSnapshot(m runtime.MemStats) MemStatsSnapshot {
 func sendMetric(metricType string, metricName string, metricValue string) {
 	client := resty.New()
 
-	url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%s", metricType, metricName, metricValue)
+	url := fmt.Sprintf("http://%s/update/%s/%s/%s", *aFlag, metricType, metricName, metricValue)
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "text/plain").
@@ -111,8 +112,7 @@ func sendMetrics() {
 }
 
 func updateMemStatsPeriodically() {
-	pollInterval := 2
-	pollTicker := time.NewTicker(time.Duration(pollInterval) * time.Second)
+	pollTicker := time.NewTicker(time.Duration(*pFlag) * time.Second)
 
 	go func() {
 		for range pollTicker.C {
@@ -126,8 +126,7 @@ func updateMemStatsPeriodically() {
 }
 
 func sendMetricsPeriodically() {
-	reportInterval := 10
-	reportTicker := time.NewTicker(time.Duration(reportInterval) * time.Second)
+	reportTicker := time.NewTicker(time.Duration(*rFlag) * time.Second)
 
 	go func() {
 		for range reportTicker.C {
@@ -136,7 +135,15 @@ func sendMetricsPeriodically() {
 	}()
 }
 
+var (
+	aFlag = flag.String("a", "localhost:8080", "Port to run the server on")
+	pFlag = flag.Int("p", 2, "poll interval")
+	rFlag = flag.Int("r", 10, "report interval")
+)
+
 func main() {
+	flag.Parse()
+
 	updateMemStatsPeriodically()
 	sendMetricsPeriodically()
 	select {}
