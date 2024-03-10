@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
+	"os"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -143,6 +144,25 @@ var (
 
 func main() {
 	flag.Parse()
+
+	defaultAddr := os.Getenv("ADDRESS")
+	if defaultAddr != "" {
+		*aFlag = defaultAddr
+	}
+
+	defaultRepInterval := os.Getenv("REPORT_INTERVAL")
+	if defaultRepInterval != "" {
+		if repInt, err := strconv.Atoi(defaultRepInterval); err == nil {
+			*rFlag = repInt
+		}
+	}
+
+	defaultPollInterval := os.Getenv("POLL_INTERVAL")
+	if defaultPollInterval != "" {
+		if pollInt, err := strconv.Atoi(defaultPollInterval); err == nil {
+			*pFlag = pollInt
+		}
+	}
 
 	updateMemStatsPeriodically()
 	sendMetricsPeriodically()

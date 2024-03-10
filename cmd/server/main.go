@@ -132,6 +132,11 @@ var aFlag = flag.String("a", "localhost:8080", "Port to run the server on")
 func main() {
 	flag.Parse()
 
+	defaultAddr := os.Getenv("ADDRESS")
+	if defaultAddr != "" {
+		*aFlag = defaultAddr
+	}
+
 	r := chi.NewRouter()
 
 	r.Get("/", getAll)
