@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"math/rand"
-	"net/http"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -78,21 +78,20 @@ func createMemStatsSnapshot(m runtime.MemStats) MemStatsSnapshot {
 }
 
 func sendMetric(metricType string, metricName string, metricValue string) {
+	client := resty.New()
+
 	url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%s", metricType, metricName, metricValue)
 
-	response, err := http.Post(url, "text/plain", nil)
+	resp, err := client.R().
+		SetHeader("Content-Type", "text/plain").
+		Post(url)
+
 	if err != nil {
 		fmt.Printf("Error sending request to %s: %v\n", url, err)
 		return
 	}
 
-	err = response.Body.Close()
-	if err != nil {
-		fmt.Printf("Error closing body: %v\n", err)
-		return
-	}
-
-	fmt.Printf("Successfully sent metric %s to server\n", metricName)
+	fmt.Printf("Successfully sent metric %s to server. Status Code: %d\n", metricName, resp.StatusCode())
 }
 
 func sendMetrics() {
