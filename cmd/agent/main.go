@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
-	"os"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -82,7 +81,7 @@ func createMemStatsSnapshot(m runtime.MemStats) MemStatsSnapshot {
 func sendMetric(metricType string, metricName string, metricValue string) {
 	client := resty.New()
 
-	url := fmt.Sprintf("http://%s/update/%s/%s/%s", aFlag, metricType, metricName, metricValue)
+	url := fmt.Sprintf("http://%s/update/%s/%s/%s", *aFlag, metricType, metricName, metricValue)
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "text/plain").
@@ -113,7 +112,7 @@ func sendMetrics() {
 }
 
 func updateMemStatsPeriodically() {
-	pollTicker := time.NewTicker(time.Duration(pFlag) * time.Second)
+	pollTicker := time.NewTicker(time.Duration(*pFlag) * time.Second)
 
 	go func() {
 		for range pollTicker.C {
@@ -127,7 +126,7 @@ func updateMemStatsPeriodically() {
 }
 
 func sendMetricsPeriodically() {
-	reportTicker := time.NewTicker(time.Duration(rFlag) * time.Second)
+	reportTicker := time.NewTicker(time.Duration(*rFlag) * time.Second)
 
 	go func() {
 		for range reportTicker.C {
@@ -137,39 +136,13 @@ func sendMetricsPeriodically() {
 }
 
 var (
-	aFlag = *flag.String("a", "localhost:8080", "Port to run the server on")
-	pFlag = *flag.Int("p", 2, "poll interval")
-	rFlag = *flag.Int("r", 10, "report interval")
+	aFlag = flag.String("a", "localhost:8080", "Port to run the server on")
+	pFlag = flag.Int("p", 2, "poll interval")
+	rFlag = flag.Int("r", 10, "report interval")
 )
 
 func main() {
-	// Custom usage function to provide detailed help text
-	// This does not change the exit code behavior but improves user guidance
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		flag.PrintDefaults()
-	}
-
 	flag.Parse()
-
-	defaultAddr := os.Getenv("ADDRESS")
-	if defaultAddr != "" {
-		aFlag = defaultAddr
-	}
-
-	defaultRepInterval := os.Getenv("REPORT_INTERVAL")
-	if defaultAddr != "" {
-		if repInt, err := strconv.Atoi(defaultRepInterval); err == nil {
-			rFlag = repInt
-		}
-	}
-
-	defaultPollInterval := os.Getenv("POLL_INTERVAL")
-	if defaultAddr != "" {
-		if pollInt, err := strconv.Atoi(defaultPollInterval); err == nil {
-			pFlag = pollInt
-		}
-	}
 
 	updateMemStatsPeriodically()
 	sendMetricsPeriodically()
