@@ -127,7 +127,7 @@ func getAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var aFlag = *flag.Int("a", 8080, "Port to run the server on")
+var aFlag = *flag.String("a", "localhost:8080", "Port to run the server on")
 
 func main() {
 	// Custom usage function to provide detailed help text
@@ -144,8 +144,8 @@ func main() {
 	r.Get("/value/{metricType}/{metricName}", getMetric)
 	r.Post("/update/{metricType}/{metricName}/{metricValue}", updateMetric)
 
-	fmt.Printf("Server is listening on :%d\n", aFlag)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", aFlag), r); err != nil {
+	fmt.Printf("Server is listening on :%s\n", aFlag)
+	if err := http.ListenAndServe(aFlag, r); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start server: %v\n", err)
 		os.Exit(1)
 	}

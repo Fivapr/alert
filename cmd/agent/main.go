@@ -82,7 +82,7 @@ func createMemStatsSnapshot(m runtime.MemStats) MemStatsSnapshot {
 func sendMetric(metricType string, metricName string, metricValue string) {
 	client := resty.New()
 
-	url := fmt.Sprintf("http://localhost:%d/update/%s/%s/%s", aFlag, metricType, metricName, metricValue)
+	url := fmt.Sprintf("http://%s/update/%s/%s/%s", aFlag, metricType, metricName, metricValue)
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "text/plain").
@@ -137,7 +137,7 @@ func sendMetricsPeriodically() {
 }
 
 var (
-	aFlag = *flag.Int("a", 8080, "Port to run the server on")
+	aFlag = *flag.String("a", "localhost:8080", "Port to run the server on")
 	pFlag = *flag.Int("p", 2, "poll interval")
 	rFlag = *flag.Int("r", 10, "report interval")
 )
