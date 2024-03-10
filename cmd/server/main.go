@@ -138,6 +138,11 @@ func main() {
 	}
 	flag.Parse()
 
+	defaultAddr := os.Getenv("ADDRESS")
+	if defaultAddr != "" {
+		aFlag = defaultAddr
+	}
+
 	r := chi.NewRouter()
 
 	r.Get("/", getAll)

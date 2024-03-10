@@ -152,6 +152,25 @@ func main() {
 
 	flag.Parse()
 
+	defaultAddr := os.Getenv("ADDRESS")
+	if defaultAddr != "" {
+		aFlag = defaultAddr
+	}
+
+	defaultRepInterval := os.Getenv("REPORT_INTERVAL")
+	if defaultAddr != "" {
+		if repInt, err := strconv.Atoi(defaultRepInterval); err == nil {
+			rFlag = repInt
+		}
+	}
+
+	defaultPollInterval := os.Getenv("POLL_INTERVAL")
+	if defaultAddr != "" {
+		if pollInt, err := strconv.Atoi(defaultPollInterval); err == nil {
+			pFlag = pollInt
+		}
+	}
+
 	updateMemStatsPeriodically()
 	sendMetricsPeriodically()
 	select {}
