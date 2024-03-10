@@ -127,15 +127,9 @@ func getAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var aFlag = *flag.String("a", "localhost:8080", "Port to run the server on")
+var aFlag = flag.String("a", "localhost:8080", "Port to run the server on")
 
 func main() {
-	// Custom usage function to provide detailed help text
-	// This does not change the exit code behavior but improves user guidance
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		flag.PrintDefaults()
-	}
 	flag.Parse()
 
 	r := chi.NewRouter()
@@ -144,8 +138,8 @@ func main() {
 	r.Get("/value/{metricType}/{metricName}", getMetric)
 	r.Post("/update/{metricType}/{metricName}/{metricValue}", updateMetric)
 
-	fmt.Printf("Server is listening on :%s\n", aFlag)
-	if err := http.ListenAndServe(aFlag, r); err != nil {
+	fmt.Printf("Server is listening on :%s\n", *aFlag)
+	if err := http.ListenAndServe(*aFlag, r); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start server: %v\n", err)
 		os.Exit(1)
 	}
