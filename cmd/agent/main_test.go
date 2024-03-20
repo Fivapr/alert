@@ -57,29 +57,3 @@ func Test_sendMetrics(t *testing.T) {
 		})
 	}
 }
-
-func Test_sendMetricsPeriodically(t *testing.T) {
-	tests := []struct {
-		name string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			sendMetricsPeriodically()
-		})
-	}
-}
-
-func Test_updateMemStatsPeriodically(t *testing.T) {
-	tests := []struct {
-		name string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			updateMemStatsPeriodically()
-		})
-	}
-}
