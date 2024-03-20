@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"math/rand"
 	"os"
 	"reflect"
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 var snapshot MemStatsSnapshot
@@ -96,6 +97,14 @@ func sendMetric(metricType string, metricName string, metricValue string) {
 	fmt.Printf("Successfully sent metric %s to server. Status Code: %d\n", metricName, resp.StatusCode())
 }
 
+func updateMetrics() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	snapshot = createMemStatsSnapshot(m)
+	randomValue = rand.Intn(1000)
+	pollCount++
+}
+
 func sendMetrics() {
 	v := reflect.ValueOf(snapshot)
 	typeOfSnapshot := v.Type()
@@ -110,30 +119,6 @@ func sendMetrics() {
 
 	sendMetric("gauge", "RandomValue", strconv.Itoa(randomValue))
 	sendMetric("counter", "PollCount", strconv.Itoa(pollCount))
-}
-
-func updateMemStatsPeriodically() {
-	pollTicker := time.NewTicker(time.Duration(*pFlag) * time.Second)
-
-	go func() {
-		for range pollTicker.C {
-			var m runtime.MemStats
-			runtime.ReadMemStats(&m)
-			snapshot = createMemStatsSnapshot(m)
-			randomValue = rand.Intn(1000)
-			pollCount++
-		}
-	}()
-}
-
-func sendMetricsPeriodically() {
-	reportTicker := time.NewTicker(time.Duration(*rFlag) * time.Second)
-
-	go func() {
-		for range reportTicker.C {
-			sendMetrics()
-		}
-	}()
 }
 
 var (
@@ -164,7 +149,17 @@ func main() {
 		}
 	}
 
-	updateMemStatsPeriodically()
-	sendMetricsPeriodically()
-	select {}
+	pollTicker := time.NewTicker(time.Duration(*pFlag) * time.Second)
+	defer pollTicker.Stop()
+	reportTicker := time.NewTicker(time.Duration(*rFlag) * time.Second)
+	defer reportTicker.Stop()
+
+	for {
+		select {
+		case <-pollTicker.C:
+			updateMetrics()
+		case <-reportTicker.C:
+			sendMetrics()
+		}
+	}
 }

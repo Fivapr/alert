@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"html/template"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type MemStorage struct {
